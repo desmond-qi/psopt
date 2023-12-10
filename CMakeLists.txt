@@ -42,6 +42,8 @@ if(${BUILD_TESTS})
 	add_subdirectory(tests/)
 endif()
 
+add_subdirectory(qhx/)
+
 
 # INSTALLING and PAKAGING
 set(PACKAGE_FIND_NAME "${PROJECT_NAME}")
