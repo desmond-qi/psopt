@@ -108,8 +108,8 @@ int main(void)
     JumpData.ReadJumpTraj();
     JumpData.ReadGuess();
     
-    problem.name                = "Test";
-    problem.outfilename         = "Test.txt";
+    problem.name                = "AirOpt2";
+    problem.outfilename         = "AirOpt2.txt";
 
     // Constants_ CONSTAINS;
 
