@@ -153,7 +153,8 @@ void plot(const MatrixXd& xa, const MatrixXd& ya, const string& title, const cha
                 }
          	fprintf(gscript,"'XY.dat' using 1:%i title \"%s\" ",  i, legend_i);
 
-                fprintf(gscript,"with linespoints");
+                // fprintf(gscript,"with linespoints");
+                fprintf(gscript,"with lines");
 
                 if(i<(ny+1) ) fprintf(gscript,", ");
 

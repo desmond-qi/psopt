@@ -4,12 +4,15 @@
 
 #include <adolc/adouble.h>
 #include <math.h>
+#include <Eigen/Dense>
 #include "Base.h"
 
 extern "C"
 {
     #include "SDFast/sdfastdefs.h"
 }
+
+using namespace Eigen;
 
 namespace qhx{
 class Robot
@@ -33,11 +36,14 @@ public:
     ~Robot();
 
     void GetState(adouble *state);
+    void GetState(VectorXd state);
+    void GetState(VectorXd state, MatrixXd &Ir, int Counter);
     void arr2ssm(double Input[3], double Output[3][3]);
     double Calcu_NumPartDeriv(double f_plus, double f_minus, double delt_q);
     void Calcu_IR_Jaco();
     void Calcu_AngMom_Jaco();
-    adouble *Calcu_FloatDyn();
+    void Calcu_FloatDyn(double Dyn[3]);
+    void Calcu_FloatDyn(MatrixXd &Dyn, int Counter);
 
 };
 }

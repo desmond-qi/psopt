@@ -6,7 +6,7 @@
 namespace qhx{
 Robot::Robot()
 {
-	m_sState.Iw[1] = 2.1; //！固有惯量的值
+	m_sState.Iw[1] = 1.4; //！固有惯量的值
 	m_dTime_Old = .0;
 	CycTime = 0.001;
     sdinit();
@@ -37,7 +37,38 @@ void Robot::GetState(adouble *state)
     sdsys(&m_sState.MTOT, m_sState.CoMPos, m_sState.ICoM);  
     sdfrcmat(m_sState.H);
     sdmassmat(m_sState.M);
-	for (int i = 0; i < 3; i++) m_sState.Ir[i] = m_sState.ICoM[i][i];
+	for (int i = 0; i < 3; i++) m_sState.Ir[i] = m_sState.ICoM[i][i] - m_sState.Iw[i];
+}
+
+void Robot::GetState(VectorXd state)
+{
+	for (int i = 0; i < TOF; i++)
+	{
+		m_q[i] = state(i);
+		m_dq[i] = state(i+TOF);
+		m_ddq[i] = state(i+2*TOF);
+	}
+    sdstate(.0, m_q, m_dq);
+    sdsys(&m_sState.MTOT, m_sState.CoMPos, m_sState.ICoM);  
+    sdfrcmat(m_sState.H);
+    sdmassmat(m_sState.M);
+	for (int i = 0; i < 3; i++) m_sState.Ir[i] = m_sState.ICoM[i][i] - m_sState.Iw[i];
+}
+
+void Robot::GetState(VectorXd state, MatrixXd &Ir, int Counter)
+{
+	Ir.resize(Counter+1, 3);
+	for (int i = 0; i < TOF; i++)
+	{
+		m_q[i] = state(i);
+		m_dq[i] = state(i+TOF);
+		m_ddq[i] = state(i+2*TOF);
+	}
+    sdstate(.0, m_q, m_dq);
+    sdsys(&m_sState.MTOT, m_sState.CoMPos, m_sState.ICoM);  
+    sdfrcmat(m_sState.H);
+    sdmassmat(m_sState.M);
+	for (int i = 0; i < 3; i++) Ir(Counter, i) = m_sState.ICoM[i][i] - m_sState.Iw[i];
 }
 
 void Robot::Calcu_IR_Jaco()
@@ -80,19 +111,24 @@ void Robot::Calcu_AngMom_Jaco()
 	}
 }
 
-adouble *Robot::Calcu_FloatDyn()
+void Robot::Calcu_FloatDyn(double Dyn[3])
 {
-	adouble *Output;
-	double Dyn[3] = {.0};
-
 	for (int i = 0; i < 3; i++)
 	{
 		for (int j = 0; j < TOF; j++) Dyn[i] += m_sState.M[i][j]*m_ddq[j];
 		Dyn[i] -= m_sState.H[i];
-		Output[i].setValue(Dyn[i]);
 	}
-
-	return Output;
 }
+
+void Robot::Calcu_FloatDyn(MatrixXd &Dyn, int Counter)
+{
+	Dyn.resize(Counter+1, 3);
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < TOF; j++) Dyn(Counter, i) += m_sState.M[i][j]*m_ddq[j];
+		Dyn(Counter, i) -= m_sState.H[i];
+	}
+}
+
     
 }

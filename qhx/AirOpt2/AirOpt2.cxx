@@ -1,11 +1,11 @@
 #include "psopt.h"
-// #include <RobotConf.h>
+#include <RobotConf.h>
 #include <DataProcess.h>
 
 using namespace PSOPT;
 using namespace qhx;
 
-// Robot JumpRobot;
+Robot JumpRobot;
 DataProcess JumpData;
 
 void oe2rv(MatrixXd& oe, double mu, MatrixXd* ri, MatrixXd* vi);
@@ -49,18 +49,18 @@ adouble integrand_cost(adouble* states, adouble* controls, adouble* parameters,
     adouble u;
     adouble L;
 
-    // JumpRobot.GetState(states);
+    JumpRobot.GetState(states);
     
-    // double t = time.getValue();
-    // int seq = floor(t/JumpRobot.CycTime);
-    // L1 = JumpRobot.m_sState.Ir[1] - JumpData.m_sTraj.JumpTraj[10][JumpData.m_sTraj.JointTraj[0].size()+seq];
-    // L2 = (JumpRobot.m_sState.Ir[1] - JumpRobot.m_sState.Ir_Old[1])/(t - JumpRobot.m_dTime_Old) - JumpData.m_sTraj.JumpTraj[11][JumpData.m_sTraj.JointTraj[0].size()+seq];
+    double t = time.getValue();
+    int seq = floor(t/JumpRobot.CycTime);
+    L1 = JumpRobot.m_sState.Ir[1] - JumpData.m_sTraj.JumpTraj[10][JumpData.m_sTraj.JointTraj[0].size()+seq];
+    L2 = (JumpRobot.m_sState.Ir[1] - JumpRobot.m_sState.Ir_Old[1])/(t - JumpRobot.m_dTime_Old) - JumpData.m_sTraj.JumpTraj[11][JumpData.m_sTraj.JointTraj[0].size()+seq];
     for (int i = 0; i < TOF; i++) u += controls[i]*controls[i];
     
-    // JumpRobot.m_dTime_Old = t;
-    // JumpRobot.m_sState.Ir_Old[1] = JumpRobot.m_sState.Ir[1];
-
-    L = u;
+    JumpRobot.m_dTime_Old = t;
+    JumpRobot.m_sState.Ir_Old[1] = JumpRobot.m_sState.Ir[1];
+    
+    L = 1.e6*L1*L1 + 1.e4*L2*L2 + u;
 
     return  L;
 }
@@ -76,15 +76,15 @@ void dae(adouble* derivatives, adouble* path, adouble* states,
         derivatives[2*TOF+i] = controls[i];
     }
 
-    // double Dyn[3];
-    // JumpRobot.GetState(states);
-    // JumpRobot.Calcu_FloatDyn(Dyn);
+    double Dyn[3];
+    JumpRobot.GetState(states);
+    JumpRobot.Calcu_FloatDyn(Dyn);
 
-    // path[0] = Dyn[0]; path[1] = Dyn[1]; path[2] = Dyn[2];
-    // path[3] = states[4] - states[7];
-    // path[4] = states[5] - states[8];
-    // path[5] = states[6] - states[9];
-    // path[6] = states[10] - states[11];
+    path[0] = Dyn[0]; path[1] = Dyn[1]; path[2] = Dyn[2];
+    path[3] = states[4] - states[7];
+    path[4] = states[5] - states[8];
+    path[5] = states[6] - states[9];
+    path[6] = states[10] - states[11];
 }
 
 void events(adouble* e, adouble* initial_states, adouble* final_states,
@@ -105,12 +105,11 @@ int main(void)
     Sol  solution;
     Prob problem;
 
-    // JumpData.ReadJointTraj();
     JumpData.ReadJumpTraj();
     JumpData.ReadGuess();
     
-    problem.name                = "AirOpt";
-    problem.outfilename         = "AirOpt.txt";
+    problem.name                = "Test";
+    problem.outfilename         = "Test.txt";
 
     // Constants_ CONSTAINS;
 
@@ -124,8 +123,8 @@ int main(void)
     problem.phases(1).nstates   = 3*TOF;
     problem.phases(1).ncontrols = TOF;
     problem.phases(1).nevents   = 0;
-    problem.phases(1).npath     = 0;
-    problem.phases(1).nodes     << 200;
+    problem.phases(1).npath     = 7;
+    problem.phases(1).nodes     << 100;
 
     psopt_level2_setup(problem, algorithm);
 
@@ -158,8 +157,8 @@ int main(void)
     problem.phases(1).bounds.lower.EndTime   = t0;
     problem.phases(1).bounds.upper.EndTime   = tf;
 
-    // problem.phases(1).bounds.lower.path.setZero();
-    // problem.phases(1).bounds.upper.path.setZero();
+    problem.phases(1).bounds.lower.path.setZero();
+    problem.phases(1).bounds.upper.path.setZero();
 
     problem.integrand_cost = &integrand_cost;
     problem.endpoint_cost  = &endpoint_cost;
@@ -203,15 +202,15 @@ int main(void)
 
     psopt(solution, problem, algorithm);
 
-    MatrixXd x, u, t, xi, ui, ti;
-    x = solution.get_states_in_phase(1);
-    u = solution.get_controls_in_phase(1);
-    t = solution.get_time_in_phase(1);
+    // MatrixXd x, u, t, xi, ui, ti;
+    // x = solution.get_states_in_phase(1);
+    // u = solution.get_controls_in_phase(1);
+    // t = solution.get_time_in_phase(1);
 
-    Save(x, "../../../qhx/AirOpt/Traj/x.dat");
-    Save(u, "../../../qhx/AirOpt/Traj/u.dat");
-    Save(t, "../../../qhx/AirOpt/Traj/t.dat");
+    // Save(x, "../../../qhx/AirOpt/Traj/x.dat");
+    // Save(u, "../../../qhx/AirOpt/Traj/u.dat");
+    // Save(t, "../../../qhx/AirOpt/Traj/t.dat");
 
-    plot(t,x.row(0),problem.name,"time (s)","x");
+    // plot(t,x.row(0),problem.name,"time (s)","x");
 }
 

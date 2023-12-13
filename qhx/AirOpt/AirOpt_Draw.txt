@@ -1,0 +1,30 @@
+#include <psopt.h>
+#include <AirOpt_Draw.h>
+#include <DataProcess.h>
+#include <RobotConf.h>
+
+using namespace std;
+using namespace Eigen;
+using namespace qhx;
+
+int main(void)
+{
+    DataProcess Data;
+    Robot JumpRobot;
+
+    Data.ReadJointTraj();
+    Data.ReadSolution();
+
+    int Counter = 0;
+    MatrixXd Ir, Dyn;
+    for (int i = 0; i < Data.m_sSolutionPlot.Time_Counter; i++)
+    {
+        JumpRobot.GetState(Data.m_sSolutionPlot.State.row(i), Ir, Counter);
+        JumpRobot.Calcu_FloatDyn(Dyn, Counter);
+
+        Counter++;
+    }
+    MatrixXd x, y;
+    plot(Data.m_sSolutionPlot.Time, Dyn.col(0), "Dynamic Constraint", "time(s)", "Dyn");
+    // plot(Data.m_sSolutionPlot.Time, Data.m_sSolutionPlot.State.row(0),"State[0]","time (s)","x");
+}
